@@ -1,29 +1,35 @@
-#include <X11/Xlib.h>
-#include <unistd.h>
+#include "audio/AudioCapture.hpp"
+#include <iostream>
+#include <chrono>
+#include <thread>
+#include <csignal>
+#include <atomic>
+
+std::atomic<bool> running(true);
+
+void signalHandler(int signal) {
+  (void)signal; // Unused parameter
+    running = false;
+}
 
 int main() {
-    Display* dpy = XOpenDisplay(NULL);
-    if (!dpy) return 1;
+    signal(SIGINT, signalHandler); // Handle Ctrl+C
+    signal(SIGTERM, signalHandler);
 
-    int screen = DefaultScreen(dpy);
-    Window win = XCreateSimpleWindow(dpy, RootWindow(dpy, screen),
-                                     100, 100, 800, 400, 1,
-                                     BlackPixel(dpy, screen),
-                                     WhitePixel(dpy, screen));
+    audio::AudioCapture audioCapture("", 44100, 2);
 
-    XMapWindow(dpy, win);
-    XFlush(dpy);
-
-    // Run loop
-    while (true) {
-        XEvent ev;
-        XNextEvent(dpy, &ev);
-        if (ev.type == Expose) {
-            // Draw stuff here later
-        }
-        usleep(16000); // ~60fps
+    if (!audioCapture.start()) {
+        std::cerr << "Failed to start audio capture!" << std::endl;
+        return 1;
     }
 
-    XCloseDisplay(dpy);
+    std::cout << "Running... Press Ctrl+C to stop." << std::endl;
+
+    while (running) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    audioCapture.stop();
+    std::cout << "Stopped cleanly." << std::endl;
     return 0;
 }
