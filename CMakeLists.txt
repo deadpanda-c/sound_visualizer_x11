@@ -28,6 +28,8 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     ${PULSE_LIBRARIES}
     ${X11_LIBRARIES}
+    pulse-simple
+    pulse
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE
